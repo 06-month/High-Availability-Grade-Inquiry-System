@@ -13,12 +13,19 @@ function isEmpty(v) {
   return !v || !String(v).trim();
 }
 
+function redirectIfAlreadyLoggedIn() {
+  if (localStorage.getItem("isLoggedIn") === "true") {
+    window.location.href = "../main/index.html";
+  }
+}
+
 function init() {
+  redirectIfAlreadyLoggedIn();
+
   const form = $("loginForm");
   const userId = $("userId");
   const password = $("password");
 
-  // Enter로 제출
   form.addEventListener("submit", (e) => {
     e.preventDefault();
 
@@ -35,22 +42,20 @@ function init() {
       password.focus();
       return;
     }
-
-    // 데모: 간단한 형식 체크(숫자만이 아니어도 되게 느슨하게)
     if (idVal.length < 4) {
       setMsg("학번/사번을 다시 확인해주세요(너무 짧습니다).", "error");
       userId.focus();
       return;
     }
 
-    // 성공(데모)
-    setMsg("로그인 성공(데모) - 실제 서비스는 서버 연동이 필요합니다.", "success");
+    // ✅ 데모 로그인 성공
+    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("userId", idVal);
 
-    // 원하면 여기서 성적조회 화면으로 이동(예: ../main/index.html)
-    // window.location.href = "../main/index.html";
+    setMsg("로그인 성공! 메인 화면으로 이동합니다...", "success");
+    window.location.href = "../main/index.html";
   });
 
-  // CapsLock 경고(선택)
   password.addEventListener("keyup", (e) => {
     if (e.getModifierState && e.getModifierState("CapsLock")) {
       setMsg("Caps Lock이 켜져 있습니다.", "error");
