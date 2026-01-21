@@ -105,19 +105,3 @@ CREATE TABLE GRADE_SUMMARY (
     INDEX idx_semester (semester),
     FOREIGN KEY (student_id) REFERENCES STUDENTS(student_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE SYSTEM_EVENTS (
-    event_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    instance_id VARCHAR(100) NULL,
-    event_type VARCHAR(50) NOT NULL,
-    description TEXT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    processed_at DATETIME NULL,
-    retry_count INT NOT NULL DEFAULT 0,
-    processing_status ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED') NOT NULL DEFAULT 'PENDING',
-    INDEX idx_event_type_created (event_type, created_at),
-    INDEX idx_created_at (created_at),
-    INDEX idx_status_created (processing_status, created_at),
-    INDEX idx_retry_count (retry_count),
-    INDEX idx_event_type_status_created (event_type, processing_status, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -26,9 +26,13 @@ spring:
   
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: 
+      cluster:
+        nodes:
+          - ${NCP_REDIS_NODE1_HOST:localhost}:${NCP_REDIS_NODE1_PORT:7000}
+          - ${NCP_REDIS_NODE2_HOST:localhost}:${NCP_REDIS_NODE2_PORT:7001}
+          - ${NCP_REDIS_NODE3_HOST:localhost}:${NCP_REDIS_NODE3_PORT:7002}
+        max-redirects: 3
+      password: ${NCP_REDIS_PASSWORD:}
       timeout: 2000ms
       lettuce:
         pool:

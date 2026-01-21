@@ -13,10 +13,15 @@ MYSQL_USERNAME=grade_user
 MYSQL_PASSWORD=your-mysql-password
 ```
 
-### Redis 정보 확인
+### Redis Cluster 정보 확인
 ```bash
-REDIS_HOST=your-redis-host.ncloud.com
-REDIS_PORT=6379
+# NCP 콘솔에서 Redis 클러스터의 각 노드 정보 확인
+REDIS_NODE1_HOST=your-redis-node1.ncloud.com
+REDIS_NODE1_PORT=6379
+REDIS_NODE2_HOST=your-redis-node2.ncloud.com  
+REDIS_NODE2_PORT=6379
+REDIS_NODE3_HOST=your-redis-node3.ncloud.com
+REDIS_NODE3_PORT=6379
 REDIS_PASSWORD=your-redis-password
 ```
 
@@ -49,7 +54,9 @@ kubectl create secret generic grade-inquiry-secret \
   --from-literal=mysql-replica-host=your-mysql-replica-host.ncloud.com \
   --from-literal=mysql-username=grade_user \
   --from-literal=mysql-password=your-mysql-password \
-  --from-literal=redis-host=your-redis-host.ncloud.com \
+  --from-literal=redis-node1-host=your-redis-node1.ncloud.com \
+  --from-literal=redis-node2-host=your-redis-node2.ncloud.com \
+  --from-literal=redis-node3-host=your-redis-node3.ncloud.com \
   --from-literal=redis-password=your-redis-password \
   --from-literal=jwt-issuer-uri=https://your-auth-server.com/auth/realms/grade-portal
 ```

@@ -78,7 +78,7 @@ Desktop.ini
 *.pid.lock
 
 # Environment files
-.env
+.env.*
 .env.local
 .env.ncp
 .env.production
