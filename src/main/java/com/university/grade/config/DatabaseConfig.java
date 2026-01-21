@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
-import org.springframework.jdbc.datasource.lookup.LazyConnectionDataSourceProxy;
+import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
@@ -38,7 +38,8 @@ public class DatabaseConfig {
     }
 
     @Bean
-    public DataSource readReplicaDataSource(@Qualifier("readReplicaDataSourceProperties") DataSourceProperties properties) {
+    public DataSource readReplicaDataSource(
+            @Qualifier("readReplicaDataSourceProperties") DataSourceProperties properties) {
         return properties.initializeDataSourceBuilder().build();
     }
 
@@ -51,7 +52,7 @@ public class DatabaseConfig {
             protected Object determineCurrentLookupKey() {
                 boolean isReadOnly = TransactionSynchronizationManager.isCurrentTransactionReadOnly();
                 String target = isReadOnly ? "readReplica" : "master";
-                logger.debug("Routing to {} (readOnly={})", target, isReadOnly);
+                logger.debug("Routing to " + target + " (readOnly=" + isReadOnly + ")");
                 return target;
             }
         };

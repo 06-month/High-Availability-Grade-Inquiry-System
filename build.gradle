@@ -27,20 +27,24 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     
+    // Database drivers
     implementation 'com.mysql:mysql-connector-j:8.2.0'
+    
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'io.micrometer:micrometer-registry-prometheus'
     
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.testcontainers:testcontainers:1.19.3'
-    testImplementation 'org.testcontainers:mysql:1.19.3'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+jar {
+    enabled = false
+}
+
+bootJar {
+    enabled = true
 }

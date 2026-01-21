@@ -43,10 +43,10 @@ public class SystemEventPublisher {
             event.setRetryCount(0);
 
             systemEventRepository.save(event);
-            logger.debug("Published cache invalidation event: type={}, studentId={}, semester={}, reason={}", 
+            logger.debug("Published cache invalidation event: type={}, studentId={}, semester={}, reason={}",
                     cacheType, LoggingUtil.maskStudentId(studentId), semester, reason);
         } catch (Exception e) {
-            logger.error("Failed to publish cache invalidation event: type={}, studentId={}, semester={}, reason={}", 
+            logger.error("Failed to publish cache invalidation event: type={}, studentId={}, semester={}, reason={}",
                     cacheType, LoggingUtil.maskStudentId(studentId), semester, reason, e);
         }
     }

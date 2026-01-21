@@ -28,7 +28,8 @@ public class GradeReleasePolicyService {
     @Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
     public boolean isGradeReleasedCached(String semester) {
         return policyCache.getOrLoad(semester, () -> {
-            Optional<GradeReleasePolicyProjection> policyOpt = policyCommandRepository.findReleaseStatusBySemester(semester);
+            Optional<GradeReleasePolicyProjection> policyOpt = policyCommandRepository
+                    .findReleaseStatusBySemester(semester);
             if (policyOpt.isEmpty()) {
                 logger.warn("Grade release policy not found for semester: {}", semester);
                 return false;
@@ -37,8 +38,8 @@ public class GradeReleasePolicyService {
             GradeReleasePolicyProjection policy = policyOpt.get();
             Boolean isReleased = policy.getIsReleased();
 
-            logger.debug("Retrieved and cached grade release policy from Master DB: semester={}, isReleased={}", 
-                semester, isReleased);
+            logger.debug("Retrieved and cached grade release policy from Master DB: semester={}, isReleased={}",
+                    semester, isReleased);
 
             return isReleased;
         });
@@ -46,7 +47,8 @@ public class GradeReleasePolicyService {
 
     @Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
     public boolean isGradeReleasedStrict(String semester) {
-        Optional<GradeReleasePolicyProjection> policyOpt = policyCommandRepository.findReleaseStatusBySemester(semester);
+        Optional<GradeReleasePolicyProjection> policyOpt = policyCommandRepository
+                .findReleaseStatusBySemester(semester);
         if (policyOpt.isEmpty()) {
             logger.warn("Grade release policy not found for semester: {}", semester);
             return false;
@@ -55,8 +57,8 @@ public class GradeReleasePolicyService {
         GradeReleasePolicyProjection policy = policyOpt.get();
         Boolean isReleased = policy.getIsReleased();
 
-        logger.debug("Retrieved grade release policy from Master DB (strict): semester={}, isReleased={}", 
-            semester, isReleased);
+        logger.debug("Retrieved grade release policy from Master DB (strict): semester={}, isReleased={}",
+                semester, isReleased);
 
         return isReleased;
     }

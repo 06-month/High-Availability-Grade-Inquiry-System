@@ -25,18 +25,17 @@ public class GradeReleasePolicyUpdateService {
     public void updateReleasePolicy(String semester, boolean isReleased) {
         logger.debug("Updating grade release policy: semester={}, isReleased={}", semester, isReleased);
         policyRepository.updateReleaseStatus(semester, isReleased);
-        
+
         TransactionSynchronizationManager.registerSynchronization(
-            new org.springframework.transaction.support.TransactionSynchronizationAdapter() {
-                @Override
-                public void afterCommit() {
-                    try {
-                        cacheInvalidationService.invalidatePolicy(semester);
-                    } catch (Exception e) {
-                        logger.warn("Failed to invalidate policy cache after commit: semester={}", semester, e);
+                new org.springframework.transaction.support.TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            cacheInvalidationService.invalidatePolicy(semester);
+                        } catch (Exception e) {
+                            logger.warn("Failed to invalidate policy cache after commit: semester={}", semester, e);
+                        }
                     }
-                }
-            }
-        );
+                });
     }
 }

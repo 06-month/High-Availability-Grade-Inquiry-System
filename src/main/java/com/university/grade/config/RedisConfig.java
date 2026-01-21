@@ -1,13 +1,12 @@
 package com.university.grade.config;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -37,15 +36,7 @@ public class RedisConfig {
             config.setPassword(password);
         }
 
-        GenericObjectPoolConfig<Object> poolConfig = new GenericObjectPoolConfig<>();
-        poolConfig.setMaxTotal(20);
-        poolConfig.setMaxIdle(10);
-        poolConfig.setMinIdle(2);
-        poolConfig.setTestOnBorrow(true);
-        poolConfig.setTestWhileIdle(true);
-
-        LettucePoolingClientConfiguration clientConfig = LettucePoolingClientConfiguration.builder()
-                .poolConfig(poolConfig)
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .commandTimeout(Duration.ofMillis(timeout))
                 .build();
 

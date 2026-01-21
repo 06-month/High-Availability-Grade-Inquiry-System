@@ -36,7 +36,6 @@ public class GradeInquiryService {
     private final Counter cacheMissCounterSummary;
     private final Counter cacheHitCounterList;
     private final Counter cacheMissCounterList;
-    private final Counter cacheFallbackCounter;
     private final Timer dbQueryTimerSummary;
     private final Timer dbQueryTimerList;
     private final boolean policyStrictCheckEnabled;
@@ -68,9 +67,6 @@ public class GradeInquiryService {
         this.cacheMissCounterList = Counter.builder("grade.cache.miss")
                 .tag("type", "list")
                 .register(meterRegistry);
-        this.cacheFallbackCounter = Counter.builder("grade.cache.fallback")
-                .description("Cache fallback count after retries exhausted")
-                .register(meterRegistry);
         this.dbQueryTimerSummary = Timer.builder("grade.db.query")
                 .tag("type", "summary")
                 .register(meterRegistry);
@@ -78,7 +74,7 @@ public class GradeInquiryService {
                 .tag("type", "list")
                 .register(meterRegistry);
         this.policyStrictCheckEnabled = policyStrictCheckEnabled;
-        
+
         logger.info("GradeInquiryService initialized with policyStrictCheckEnabled={}", policyStrictCheckEnabled);
     }
 
@@ -101,25 +97,29 @@ public class GradeInquiryService {
         // Cache miss - load from DB
         cacheMissCounterSummary.increment();
         GradeSummaryResponse response = gradeSummaryCache.getOrLoad(studentId, semester, () -> {
-            return dbQueryTimerSummary.recordCallable(() -> {
-                var summaryOpt = gradeSummaryRepository.findSummaryByStudentIdAndSemester(studentId, semester);
-                if (summaryOpt.isEmpty()) {
-                    logger.warn("Grade summary not found: semester={}", semester);
-                    throw new IllegalArgumentException("성적 요약 정보를 찾을 수 없습니다.");
-                }
+            try {
+                return dbQueryTimerSummary.recordCallable(() -> {
+                    var summaryOpt = gradeSummaryRepository.findSummaryByStudentIdAndSemester(studentId, semester);
+                    if (summaryOpt.isEmpty()) {
+                        logger.warn("Grade summary not found: semester={}", semester);
+                        throw new IllegalArgumentException("성적 요약 정보를 찾을 수 없습니다.");
+                    }
 
-                GradeSummaryProjection summary = summaryOpt.get();
-                GradeSummaryResponse result = new GradeSummaryResponse(
-                        summary.getStudentId(),
-                        summary.getSemester(),
-                        summary.getGpa(),
-                        summary.getTotalCredits(),
-                        summary.getUpdatedAt()
-                );
+                    GradeSummaryProjection summary = summaryOpt.get();
+                    GradeSummaryResponse result = new GradeSummaryResponse();
+                    result.setStudentId(summary.getStudentId());
+                    result.setSemester(summary.getSemester());
+                    result.setGpa(summary.getGpa());
+                    result.setTotalCredits(summary.getTotalCredits());
+                    result.setUpdatedAt(summary.getUpdatedAt());
 
-                logger.debug("Cache MISS - Retrieved grade summary from DB: semester={}", semester);
-                return result;
-            });
+                    logger.debug("Cache MISS - Retrieved grade summary from DB: semester={}", semester);
+                    return result;
+                });
+            } catch (Exception e) {
+                logger.error("Failed to load grade summary from DB: semester={}", semester, e);
+                throw new RuntimeException("성적 요약 정보를 불러오는데 실패했습니다.", e);
+            }
         });
 
         // Optional strict check - disabled by default for performance
@@ -154,18 +154,24 @@ public class GradeInquiryService {
         // Cache miss - load from DB
         cacheMissCounterList.increment();
         List<GradeDetailResponse> response = gradeListCache.getOrLoad(studentId, semester, () -> {
-            return dbQueryTimerList.recordCallable(() -> {
-                List<GradeDetailProjection> projections = gradeListRepository.findGradeDetailsByStudentIdAndSemester(studentId, semester);
+            try {
+                return dbQueryTimerList.recordCallable(() -> {
+                    List<GradeDetailProjection> projections = gradeListRepository
+                            .findGradeDetailsByStudentIdAndSemester(studentId, semester);
 
-                List<GradeDetailResponse> result = projections.stream()
-                        .map(gradeDetailMapper::toDto)
-                        .collect(Collectors.toList());
+                    List<GradeDetailResponse> result = projections.stream()
+                            .map(gradeDetailMapper::toDto)
+                            .collect(Collectors.toList());
 
-                logger.debug("Cache MISS - Retrieved grade list from DB: semester={}, count={}",
-                        semester, result.size());
+                    logger.debug("Cache MISS - Retrieved grade list from DB: semester={}, count={}",
+                            semester, result.size());
 
-                return result;
-            });
+                    return result;
+                });
+            } catch (Exception e) {
+                logger.error("Failed to load grade list from DB: semester={}", semester, e);
+                throw new RuntimeException("성적 목록을 불러오는데 실패했습니다.", e);
+            }
         });
 
         // Optional strict check - disabled by default for performance

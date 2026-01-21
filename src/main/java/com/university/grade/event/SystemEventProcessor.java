@@ -1,5 +1,6 @@
 package com.university.grade.event;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.university.grade.entity.SystemEvent;
 import com.university.grade.repository.command.SystemEventRepository;
@@ -39,7 +40,7 @@ public class SystemEventProcessor {
     @Transactional
     public void processCacheInvalidationEvents() {
         List<SystemEvent> events = systemEventRepository.findPendingEventsByType("CACHE_INVALIDATE", BATCH_SIZE);
-        
+
         for (SystemEvent event : events) {
             try {
                 int claimed = systemEventRepository.claimEventForProcessing(event.getEventId());
@@ -71,7 +72,8 @@ public class SystemEventProcessor {
             LocalDateTime threshold = LocalDateTime.now().minusMinutes(STUCK_THRESHOLD_MINUTES);
             List<SystemEvent> stuckEvents = systemEventRepository.findStuckProcessingEvents(threshold);
             for (SystemEvent event : stuckEvents) {
-                logger.warn("Recovering stuck event: eventId={}, created at {}", event.getEventId(), event.getCreatedAt());
+                logger.warn("Recovering stuck event: eventId={}, created at {}", event.getEventId(),
+                        event.getCreatedAt());
                 int reset = systemEventRepository.resetStuckEvent(event.getEventId());
                 if (reset > 0) {
                     logger.info("Reset stuck event to PENDING: eventId={}", event.getEventId());
@@ -82,16 +84,15 @@ public class SystemEventProcessor {
         }
     }
 
-    private void processCacheInvalidationEvent(SystemEvent event) {
+    private void processCacheInvalidationEvent(SystemEvent event) throws JsonProcessingException {
         try {
             CacheInvalidationPayload payload = objectMapper.readValue(
-                event.getDescription(),
-                CacheInvalidationPayload.class
-            );
+                    event.getDescription(),
+                    CacheInvalidationPayload.class);
 
             logger.debug("Processing cache invalidation event: type={}, studentId={}, semester={}, reason={}",
-                    payload.getCacheType(), 
-                    LoggingUtil.maskStudentId(payload.getStudentId()), 
+                    payload.getCacheType(),
+                    LoggingUtil.maskStudentId(payload.getStudentId()),
                     payload.getSemester(),
                     payload.getReason());
 
@@ -111,9 +112,12 @@ public class SystemEventProcessor {
                 default:
                     logger.warn("Unknown cache invalidation type: {}", payload.getCacheType());
             }
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             logger.error("Failed to parse cache invalidation payload: eventId={}", event.getEventId(), e);
             throw e;
+        } catch (Exception e) {
+            logger.error("Failed to process cache invalidation: eventId={}", event.getEventId(), e);
+            throw new RuntimeException("Cache invalidation failed", e);
         }
     }
 

@@ -5,7 +5,6 @@ import com.university.grade.dto.GradeSummaryResponse;
 import com.university.grade.service.GradeInquiryService;
 import com.university.grade.util.SecurityUtil;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.annotation.Validated;
@@ -33,7 +32,8 @@ public class GradeInquiryController {
             Authentication authentication) {
         Long studentId = SecurityUtil.extractStudentIdFromAuthentication(authentication);
         if (studentId == null || studentId <= 0) {
-            throw new AuthenticationException("Invalid authentication") {};
+            throw new AuthenticationException("Invalid authentication") {
+            };
         }
 
         GradeSummaryResponse response = gradeInquiryService.getGradeSummary(studentId, semester);
@@ -46,7 +46,8 @@ public class GradeInquiryController {
             Authentication authentication) {
         Long studentId = SecurityUtil.extractStudentIdFromAuthentication(authentication);
         if (studentId == null || studentId <= 0) {
-            throw new AuthenticationException("Invalid authentication") {};
+            throw new AuthenticationException("Invalid authentication") {
+            };
         }
 
         List<GradeDetailResponse> response = gradeInquiryService.getGradeList(studentId, semester);

@@ -4,7 +4,7 @@ import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.*;
+import jakarta.servlet.*;
 import java.io.IOException;
 import java.util.UUID;
 
