@@ -1,3 +1,17 @@
+// ✅ 로그인 체크(로그인 안 했으면 login으로)
+(function guard() {
+  if (localStorage.getItem("isLoggedIn") !== "true") {
+    window.location.href = "../login/index.html";
+    return;
+  }
+})();
+
+function doLogout() {
+  localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("userId");
+  window.location.href = "../login/index.html";
+}
+
 // ===== Demo Data =====
 const allRows = [
   { code:"MATH2012", name:"확률과통계", type:"교선", credit:1, grade:"P",  point:null, pct:null, prof:"오교수", note:"Pass",
@@ -164,9 +178,9 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
-/* ===== Drawer ===== */
+/* Drawer */
 function openDrawer(row) {
-  closeAppealModal(); // 안전: drawer 열 때 모달 닫기
+  closeAppealModal();
   currentRow = row;
 
   const y = $("year").value;
@@ -196,7 +210,7 @@ function closeDrawer() {
   currentRow = null;
 }
 
-/* ===== Appeal Modal ===== */
+/* Appeal modal */
 function openAppealModal() {
   if (!currentRow) return;
 
@@ -216,12 +230,18 @@ function closeAppealModal() {
   $("appealModal").setAttribute("aria-hidden", "true");
 }
 
-/* ===== Event Bindings ===== */
+/* Events */
 function bindEvents() {
-  $("logoutLink").addEventListener("click", (e) => {
+  // 로그아웃
+  const logoutLink = $("logoutLink");
+  logoutLink.addEventListener("click", (e) => {
     e.preventDefault();
-    alert("로그아웃은 데모입니다.");
+    doLogout();
   });
+
+  // 상단 사용자 표시: 학번/사번
+  const userId = localStorage.getItem("userId");
+  if (userId) $("userName").textContent = userId;
 
   $("resetBtn").addEventListener("click", resetFilters);
   $("searchBtn").addEventListener("click", applyFilters);
@@ -236,7 +256,6 @@ function bindEvents() {
   $("okBtn").addEventListener("click", closeDrawer);
   $("backdrop").addEventListener("click", closeDrawer);
 
-  // ✅ 이의신청 버튼 눌렀을 때만 모달 뜸
   $("appealBtn").addEventListener("click", () => {
     if (!currentRow) {
       alert("먼저 과목을 선택해주세요.");
@@ -256,10 +275,7 @@ function bindEvents() {
       $("appealText").focus();
       return;
     }
-
-    alert(
-      `이의신청이 제출되었습니다(데모).\n\n과목: ${currentRow.name} (${currentRow.code})\n내용: ${text}`
-    );
+    alert(`이의신청이 제출되었습니다(데모).\n\n과목: ${currentRow.name} (${currentRow.code})\n내용: ${text}`);
     closeAppealModal();
   });
 
@@ -283,9 +299,8 @@ function init() {
   bindEvents();
   renderTable();
 
-  // ✅ 시작 시 무조건 닫힘 상태 확정
+  // 시작 상태 확정
   closeAppealModal();
-  closeDrawer(); // backdrop/remove + open 제거 (처음에 떠도 강제로 닫힘)
 }
 
 document.addEventListener("DOMContentLoaded", init);

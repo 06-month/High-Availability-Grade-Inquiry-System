@@ -26,7 +26,6 @@
         <div class="pill" title="로그인 정보">
           <span class="pill-icon" aria-hidden="true">👤</span>
           <strong id="userName">홍길동</strong>
-          <span class="user-no">(202312345)</span>
         </div>
         <a class="logout" href="#" id="logoutLink">로그아웃</a>
       </div>
@@ -34,32 +33,26 @@
   </header>
 
   <div class="layout">
-    <!-- Sidebar (학사정보 + 성적조회만) -->
     <aside class="sidebar" role="navigation" aria-label="좌측 메뉴">
       <div class="side-section-title">학사정보</div>
-
       <a class="side-item active" href="#" aria-current="page">
         <span class="side-icon" aria-hidden="true">성</span>
         <span class="side-label">성적조회</span>
       </a>
     </aside>
 
-    <!-- Content -->
     <main class="content" role="main">
       <div class="wrap">
         <div class="breadcrumb">홈 &gt; 학사정보 &gt; 성적조회</div>
 
         <div class="page-head">
-          <div>
-            <h1>성적조회</h1>
-          </div>
+          <div><h1>성적조회</h1></div>
           <div class="meta">
             기준일: <span id="today"></span><br/>
             성적구분: <strong>정규학기</strong>
           </div>
         </div>
 
-        <!-- Search/Filter Card -->
         <section class="card" aria-label="조회 조건">
           <div class="card-h">
             <h2>조회 조건</h2>
@@ -75,7 +68,6 @@
                     <option value="2026">2026</option>
                     <option value="2025" selected>2025</option>
                     <option value="2024">2024</option>
-                    <option value="2023">2023</option>
                   </select>
                 </div>
 
@@ -112,7 +104,6 @@
           </div>
         </section>
 
-        <!-- Summary Card -->
         <section class="card" aria-label="요약">
           <div class="card-h">
             <h2>학기 성적 요약</h2>
@@ -141,7 +132,6 @@
           </div>
         </section>
 
-        <!-- Table Card -->
         <section class="card" aria-label="성적내역">
           <div class="card-h">
             <h2>성적내역</h2>
@@ -181,14 +171,13 @@
             </div>
           </div>
         </section>
-
       </div>
     </main>
   </div>
 
-  <!-- Drawer (과목 상세) -->
+  <!-- Drawer -->
   <div class="drawer-backdrop" id="backdrop" aria-hidden="true"></div>
-  <aside class="drawer" id="drawer" aria-label="과목 상세" role="dialog" aria-modal="true" aria-hidden="true">
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="과목 상세">
     <div class="drawer-h">
       <div>
         <h3 id="dTitle">과목 상세</h3>
@@ -199,44 +188,20 @@
 
     <div class="drawer-b">
       <div class="kv">
-        <div class="row">
-          <div class="k">학년도/학기</div>
-          <div class="val" id="dTerm">2025 / 1학기</div>
-        </div>
-        <div class="row">
-          <div class="k">학점</div>
-          <div class="val" id="dCredit">3</div>
-        </div>
-        <div class="row">
-          <div class="k">등급</div>
-          <div class="val" id="dGrade"></div>
-        </div>
-        <div class="row">
-          <div class="k">평점</div>
-          <div class="val" id="dPoint">4.5</div>
-        </div>
-        <div class="row">
-          <div class="k">백분율</div>
-          <div class="val" id="dPct">95</div>
-        </div>
+        <div class="row"><div class="k">학년도/학기</div><div class="val" id="dTerm"></div></div>
+        <div class="row"><div class="k">학점</div><div class="val" id="dCredit"></div></div>
+        <div class="row"><div class="k">등급</div><div class="val" id="dGrade"></div></div>
+        <div class="row"><div class="k">평점</div><div class="val" id="dPoint"></div></div>
+        <div class="row"><div class="k">백분율</div><div class="val" id="dPct"></div></div>
       </div>
 
       <div class="kv">
-        <div class="row">
-          <div class="k">평가방식</div>
-          <div class="val" id="dEval"></div>
-        </div>
-        <div class="row">
-          <div class="k">비고</div>
-          <div class="val" id="dNote"></div>
-        </div>
+        <div class="row"><div class="k">평가방식</div><div class="val" id="dEval"></div></div>
+        <div class="row"><div class="k">비고</div><div class="val" id="dNote"></div></div>
       </div>
 
       <div class="kv">
-        <div class="row">
-          <div class="k">상세안내</div>
-          <div class="val" id="dDesc"></div>
-        </div>
+        <div class="row"><div class="k">상세안내</div><div class="val" id="dDesc"></div></div>
       </div>
     </div>
 
@@ -246,9 +211,8 @@
     </div>
   </aside>
 
-  <!-- Appeal Modal (이의신청 작성) : 시작은 display:none -->
+  <!-- Appeal Modal (display:none 기본) -->
   <div class="appeal-backdrop" id="appealBackdrop" aria-hidden="true"></div>
-
   <aside class="appeal-modal" id="appealModal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="이의신청 작성">
     <div class="appeal-h">
       <div>
@@ -260,9 +224,7 @@
 
     <div class="appeal-b">
       <label class="appeal-label" for="appealText">이의신청 내용</label>
-      <textarea id="appealText" class="appeal-textarea" placeholder="이의신청 사유를 구체적으로 작성해주세요.
-예) 과제 채점 오류, 출석 반영 누락, 시험 점수 이의 등"></textarea>
-
+      <textarea id="appealText" class="appeal-textarea" placeholder="이의신청 사유를 구체적으로 작성해주세요."></textarea>
       <div class="appeal-help">
         <span class="muted">* 데모 화면입니다. 실제 제출은 서버 연동이 필요합니다.</span>
       </div>
