@@ -12,15 +12,16 @@
     ↓
 [FailoverRoutingDataSource]
     ↓
-┌─────────────────┬─────────────────┐
-│   Read Replica  │   Master DB     │
-│   (읽기 우선)    │   (쓰기 + 백업)  │
-└─────────────────┴─────────────────┘
+┌─────────────────┬─────────────────┬─────────────────┐
+│  Read Replica1  │  Read Replica2  │   Master DB     │
+│   (읽기 우선)    │   (읽기 백업)    │   (쓰기 + 백업)  │
+└─────────────────┴─────────────────┴─────────────────┘
 ```
 
 ### 라우팅 로직
-- **읽기 전용 트랜잭션**: Read Replica 우선 → 실패 시 Master로 자동 전환
+- **읽기 전용 트랜잭션**: Read Replica1 → Read Replica2 → Master 순서로 시도
 - **쓰기 트랜잭션**: Master DB만 사용
+- **Load Balancing**: 2개 Read Replica 간 자동 분산
 
 ## ⚡ Circuit Breaker 패턴
 
@@ -40,22 +41,22 @@ RECOVERY_TIME_MS = 30000 // 복구 시도 간격 (30초)
 
 ## 📊 Failover 시나리오
 
-### 시나리오 1: Read Replica 일시 장애
+### 시나리오 1: Read Replica1 일시 장애
 ```
 1. 사용자 성적 조회 요청
-2. Read Replica 연결 실패 (1회)
-3. 즉시 Master DB로 Failover
-4. 성적 데이터 정상 반환
-5. 30초 후 Read Replica 복구 시도
+2. Read Replica1 연결 실패 (1회)
+3. 즉시 Read Replica2로 시도
+4. Read Replica2 성공 → 성적 데이터 정상 반환
+5. 30초 후 Read Replica1 복구 시도
 ```
 
-### 시나리오 2: Read Replica 완전 장애
+### 시나리오 2: 모든 Read Replica 장애
 ```
-1. Read Replica 3회 연속 실패
-2. Circuit Breaker 작동 (Read Replica 차단)
+1. Read Replica1, Replica2 모두 3회 연속 실패
+2. Circuit Breaker 작동 (모든 Replica 차단)
 3. 모든 읽기 요청이 Master DB로 라우팅
-4. 30초마다 Read Replica 복구 확인
-5. 복구 시 자동으로 Read Replica 사용 재개
+4. 30초마다 각 Replica 복구 확인
+5. 복구 시 자동으로 Load Balancing 재개
 ```
 
 ### 시나리오 3: Master DB 장애
@@ -71,20 +72,26 @@ RECOVERY_TIME_MS = 30000 // 복구 시도 간격 (30초)
 ### 로그 메시지
 ```bash
 # 정상 라우팅
-DEBUG: Routing to readReplica
+DEBUG: Routing to readReplica1
+DEBUG: Routing to readReplica2
 
 # Failover 발생
-WARN: ReadReplica connection failed, trying master: Connection refused
-WARN: Datasource readReplica failure count: 1
+WARN: readReplica1 connection failed, trying master: Connection refused
+WARN: Datasource readReplica1 failure count: 1
+
+# Load Balancing
+DEBUG: Routing to readReplica2 (readReplica1 unavailable)
 
 # Circuit Breaker 작동
-ERROR: Datasource readReplica has been marked as unavailable after 3 failures
+ERROR: Datasource readReplica1 has been marked as unavailable after 3 failures
+WARN: All replicas are unavailable, failing over to master
 
 # 복구 시도
-INFO: Attempting to recover datasource: readReplica
+INFO: Attempting to recover datasource: readReplica1
+INFO: Attempting to recover datasource: readReplica2
 
 # 복구 완료
-INFO: Datasource readReplica has been recovered
+INFO: Datasource readReplica1 has been recovered
 ```
 
 ### 메트릭 수집

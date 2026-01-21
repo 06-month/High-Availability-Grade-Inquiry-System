@@ -4,14 +4,19 @@ spring:
   
   datasource:
     master:
-      url: jdbc:mysql://localhost:3306/grade_portal?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      username: grade_user
-      password: grade_password
+      url: jdbc:mysql://${NCP_MYSQL_HOST:localhost}:${NCP_MYSQL_PORT:3306}/${NCP_MYSQL_DATABASE:grade_portal}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      username: ${NCP_MYSQL_USERNAME:grade_user}
+      password: ${NCP_MYSQL_PASSWORD:grade_password}
       driver-class-name: com.mysql.cj.jdbc.Driver
-    replica:
-      url: jdbc:mysql://localhost:3306/grade_portal?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      username: grade_user
-      password: grade_password
+    replica1:
+      url: jdbc:mysql://${NCP_MYSQL_REPLICA1_HOST:localhost}:${NCP_MYSQL_REPLICA1_PORT:3306}/${NCP_MYSQL_DATABASE:grade_portal}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      username: ${NCP_MYSQL_USERNAME:grade_user}
+      password: ${NCP_MYSQL_PASSWORD:grade_password}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    replica2:
+      url: jdbc:mysql://${NCP_MYSQL_REPLICA2_HOST:localhost}:${NCP_MYSQL_REPLICA2_PORT:3306}/${NCP_MYSQL_DATABASE:grade_portal}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      username: ${NCP_MYSQL_USERNAME:grade_user}
+      password: ${NCP_MYSQL_PASSWORD:grade_password}
       driver-class-name: com.mysql.cj.jdbc.Driver
   
   jpa:

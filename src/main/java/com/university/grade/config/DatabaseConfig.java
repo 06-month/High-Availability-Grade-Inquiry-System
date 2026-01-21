@@ -36,27 +36,41 @@ public class DatabaseConfig {
     }
 
     @Bean
-    @ConfigurationProperties("spring.datasource.replica")
-    public DataSourceProperties readReplicaDataSourceProperties() {
+    @ConfigurationProperties("spring.datasource.replica1")
+    public DataSourceProperties readReplica1DataSourceProperties() {
         return new DataSourceProperties();
     }
 
     @Bean
-    public DataSource readReplicaDataSource(
-            @Qualifier("readReplicaDataSourceProperties") DataSourceProperties properties) {
+    public DataSource readReplica1DataSource(
+            @Qualifier("readReplica1DataSourceProperties") DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder().build();
+    }
+
+    @Bean
+    @ConfigurationProperties("spring.datasource.replica2")
+    public DataSourceProperties readReplica2DataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Bean
+    public DataSource readReplica2DataSource(
+            @Qualifier("readReplica2DataSourceProperties") DataSourceProperties properties) {
         return properties.initializeDataSourceBuilder().build();
     }
 
     @Bean
     public DataSource routingDataSource(
             @Qualifier("masterDataSource") DataSource masterDataSource,
-            @Qualifier("readReplicaDataSource") DataSource readReplicaDataSource) {
+            @Qualifier("readReplica1DataSource") DataSource readReplica1DataSource,
+            @Qualifier("readReplica2DataSource") DataSource readReplica2DataSource) {
 
         FailoverRoutingDataSource routingDataSource = new FailoverRoutingDataSource();
 
         Map<Object, Object> dataSourceMap = new HashMap<>();
         dataSourceMap.put("master", masterDataSource);
-        dataSourceMap.put("readReplica", readReplicaDataSource);
+        dataSourceMap.put("readReplica1", readReplica1DataSource);
+        dataSourceMap.put("readReplica2", readReplica2DataSource);
         routingDataSource.setTargetDataSources(dataSourceMap);
         routingDataSource.setDefaultTargetDataSource(masterDataSource);
 
@@ -91,11 +105,12 @@ public class DatabaseConfig {
 
             if (isReadOnly) {
                 // 읽기 전용 트랜잭션: Replica 우선, 실패 시 Master로 Failover
-                if (isDataSourceAvailable("readReplica")) {
-                    logger.debug("Routing to readReplica");
-                    return "readReplica";
+                String preferredReplica = selectAvailableReplica();
+                if (preferredReplica != null) {
+                    logger.debug("Routing to {}", preferredReplica);
+                    return preferredReplica;
                 } else {
-                    logger.warn("ReadReplica is unavailable, failing over to master");
+                    logger.warn("All replicas are unavailable, failing over to master");
                     return "master";
                 }
             } else {
@@ -103,6 +118,22 @@ public class DatabaseConfig {
                 logger.debug("Routing to master for write operation");
                 return "master";
             }
+        }
+
+        /**
+         * 사용 가능한 Read Replica 선택 (Round Robin + Health Check)
+         */
+        private String selectAvailableReplica() {
+            String[] replicas = { "readReplica1", "readReplica2" };
+
+            // 모든 replica가 사용 가능한지 확인
+            for (String replica : replicas) {
+                if (isDataSourceAvailable(replica)) {
+                    return replica;
+                }
+            }
+
+            return null; // 모든 replica가 사용 불가능
         }
 
         @Override
@@ -119,13 +150,13 @@ public class DatabaseConfig {
                 recordFailure(targetKey);
 
                 // 읽기 전용이고 Replica 실패 시 Master로 재시도
-                if ("readReplica".equals(targetKey)) {
-                    logger.warn("ReadReplica connection failed, trying master: {}", e.getMessage());
+                if (targetKey.startsWith("readReplica")) {
+                    logger.warn("{} connection failed, trying master: {}", targetKey, e.getMessage());
                     try {
                         // Master로 강제 라우팅
                         return getConnectionFromMaster();
                     } catch (SQLException masterException) {
-                        logger.error("Both readReplica and master failed", masterException);
+                        logger.error("All replicas and master failed", masterException);
                         throw masterException;
                     }
                 }

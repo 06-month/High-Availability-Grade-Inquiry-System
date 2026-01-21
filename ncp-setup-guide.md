@@ -6,7 +6,8 @@
 ```bash
 # NCP 콘솔에서 확인할 정보들
 MYSQL_MASTER_HOST=your-mysql-master-host.ncloud.com
-MYSQL_REPLICA_HOST=your-mysql-replica-host.ncloud.com
+MYSQL_REPLICA1_HOST=your-mysql-replica1-host.ncloud.com
+MYSQL_REPLICA2_HOST=your-mysql-replica2-host.ncloud.com
 MYSQL_PORT=3306
 MYSQL_DATABASE=grade_portal
 MYSQL_USERNAME=grade_user
@@ -51,7 +52,8 @@ kubectl create namespace grade-inquiry
 kubectl create secret generic grade-inquiry-secret \
   --namespace=grade-inquiry \
   --from-literal=mysql-master-host=your-mysql-master-host.ncloud.com \
-  --from-literal=mysql-replica-host=your-mysql-replica-host.ncloud.com \
+  --from-literal=mysql-replica1-host=your-mysql-replica1-host.ncloud.com \
+  --from-literal=mysql-replica2-host=your-mysql-replica2-host.ncloud.com \
   --from-literal=mysql-username=grade_user \
   --from-literal=mysql-password=your-mysql-password \
   --from-literal=redis-node1-host=your-redis-node1.ncloud.com \
