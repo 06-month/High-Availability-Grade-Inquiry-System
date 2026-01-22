@@ -4,16 +4,23 @@ metadata:
   name: grade-inquiry-config
   namespace: grade-inquiry
 data:
-  # 애플리케이션 설정
+  # Spring Boot 프로파일
   SPRING_PROFILES_ACTIVE: "nks"
   
-  # 데이터베이스 설정
-  MYSQL_DATABASE: "grade_portal"
-  MYSQL_MASTER_PORT: "3306"
-  MYSQL_SLAVE_PORT: "3306"
+  # JVM 옵션
+  JAVA_OPTS: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+  
+  # 애플리케이션 설정
+  SERVER_PORT: "8080"
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_COM_UNIVERSITY_GRADE: "DEBUG"
+  
+  # 데이터베이스 URL (호스트는 Secret에서)
+  MASTER_DB_URL: "jdbc:mysql://${MYSQL_MASTER_HOST}:3306/grade_portal?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+  SLAVE_DB_URL: "jdbc:mysql://${MYSQL_SLAVE_HOST}:3306/grade_portal?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
   
   # Redis 설정
   REDIS_PORT: "6379"
   
-  # JVM 설정
-  JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:G1HeapRegionSize=16m -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=200"
+  # Actuator 설정
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"

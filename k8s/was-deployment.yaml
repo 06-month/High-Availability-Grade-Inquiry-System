@@ -12,11 +12,10 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: grade-was
-      tier: backend
   template:
     metadata:
       labels:
@@ -25,82 +24,75 @@ spec:
     spec:
       containers:
       - name: grade-was
-        image: your-registry/grade-inquiry-was:latest
+        image: your-registry.ncloud.com/grade-inquiry-was:v1.0.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: http
+          protocol: TCP
+        
+        # 환경변수
         env:
         - name: SPRING_PROFILES_ACTIVE
           valueFrom:
             configMapKeyRef:
               name: grade-inquiry-config
               key: SPRING_PROFILES_ACTIVE
-        - name: MYSQL_DATABASE
-          valueFrom:
-            configMapKeyRef:
-              name: grade-inquiry-config
-              key: MYSQL_DATABASE
-        - name: MYSQL_MASTER_HOST
-          value: "your-mysql-master-host.ncloud.com"
-        - name: MYSQL_SLAVE_HOST
-          value: "your-mysql-slave-host.ncloud.com"
-        - name: MYSQL_MASTER_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: grade-inquiry-config
-              key: MYSQL_MASTER_PORT
-        - name: MYSQL_SLAVE_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: grade-inquiry-config
-              key: MYSQL_SLAVE_PORT
-        - name: MYSQL_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: grade-inquiry-secret
-              key: MYSQL_USERNAME
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: grade-inquiry-secret
-              key: MYSQL_PASSWORD
-        - name: REDIS_HOST
-          value: "your-redis-host.ncloud.com"
-        - name: REDIS_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: grade-inquiry-config
-              key: REDIS_PORT
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: grade-inquiry-secret
-              key: REDIS_PASSWORD
-        - name: JWT_ISSUER_URI
-          valueFrom:
-            secretKeyRef:
-              name: grade-inquiry-secret
-              key: JWT_ISSUER_URI
         - name: JAVA_OPTS
           valueFrom:
             configMapKeyRef:
               name: grade-inquiry-config
               key: JAVA_OPTS
+        - name: MYSQL_MASTER_HOST
+          valueFrom:
+            secretKeyRef:
+              name: grade-inquiry-secret
+              key: mysql-master-host
+        - name: MYSQL_SLAVE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: grade-inquiry-secret
+              key: mysql-slave-host
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: grade-inquiry-secret
+              key: db-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grade-inquiry-secret
+              key: db-password
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: grade-inquiry-secret
+              key: redis-host
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grade-inquiry-secret
+              key: redis-password
+        
+        # 리소스 제한
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
             memory: "1Gi"
             cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        # 헬스체크
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 30
-          timeoutSeconds: 10
+          timeoutSeconds: 5
           failureThreshold: 3
+        
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
@@ -109,9 +101,13 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh", "-c", "sleep 15"]
-      terminationGracePeriodSeconds: 45
-      restartPolicy: Always
+        
+        # 시작 프로브
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30

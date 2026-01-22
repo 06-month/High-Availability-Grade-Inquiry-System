@@ -16,7 +16,6 @@ spec:
   selector:
     matchLabels:
       app: grade-web
-      tier: frontend
   template:
     metadata:
       labels:
@@ -25,25 +24,32 @@ spec:
     spec:
       containers:
       - name: grade-web
-        image: your-registry/grade-inquiry-web:latest
+        image: your-registry.ncloud.com/grade-inquiry-web:v1.0.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
           name: http
+          protocol: TCP
+        
+        # 리소스 제한
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "50m"
-          limits:
             memory: "128Mi"
             cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        
+        # 헬스체크
         livenessProbe:
           httpGet:
             path: /nginx-health
             port: 80
           initialDelaySeconds: 10
           periodSeconds: 30
-          timeoutSeconds: 5
+          timeoutSeconds: 3
           failureThreshold: 3
+        
         readinessProbe:
           httpGet:
             path: /nginx-health
@@ -52,9 +58,3 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 3
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh", "-c", "nginx -s quit; while killall -0 nginx; do sleep 1; done"]
-      terminationGracePeriodSeconds: 30
-      restartPolicy: Always
