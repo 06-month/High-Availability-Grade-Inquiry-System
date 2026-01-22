@@ -12,25 +12,58 @@ function doLogout() {
   window.location.href = "../login/index.html";
 }
 
-// ===== Demo Data =====
-const allRows = [
-  { code:"MATH2012", name:"확률과통계", type:"교선", credit:1, grade:"P",  point:null, pct:null, prof:"오교수", note:"Pass",
-    eval:"출석 40% / 과제 60%", desc:"P/F 과목(평점 계산 제외)" },
-  { code:"GENE1010", name:"대학글쓰기", type:"교필", credit:2, grade:"A0", point:4.0, pct:91,  prof:"한교수", note:"정상",
-    eval:"과제 60% / 출석 20% / 발표 20%", desc:"학술적 글쓰기와 리포트 작성" },
-  { code:"COME2201", name:"정보보호개론", type:"전필", credit:3, grade:"A+", point:4.5, pct:96,  prof:"김교수", note:"정상",
-    eval:"중간 30% / 기말 40% / 과제 20% / 출석 10%", desc:"보안 기본 개념 및 암호/접근통제/네트워크 보안 개요" },
-  { code:"COME2302", name:"운영체제", type:"전필", credit:3, grade:"A0", point:4.0, pct:90,  prof:"이교수", note:"정상",
-    eval:"중간 35% / 기말 35% / 과제 20% / 출석 10%", desc:"프로세스/스레드/메모리/파일시스템/스케줄링" },
-  { code:"COME2405", name:"데이터베이스", type:"전필", credit:3, grade:"B+", point:3.5, pct:86,  prof:"박교수", note:"정상",
-    eval:"중간 30% / 기말 40% / 과제 20% / 출석 10%", desc:"ERD, 정규화, SQL, 트랜잭션, 인덱스" },
-  { code:"COME3101", name:"웹프로그래밍", type:"전선", credit:3, grade:"A0", point:4.0, pct:92,  prof:"최교수", note:"정상",
-    eval:"과제 50% / 프로젝트 30% / 출석 20%", desc:"HTML/CSS/JS 기반 웹 개발과 프로젝트 실습" },
-  { code:"COME3303", name:"소프트웨어공학", type:"전선", credit:3, grade:"B0", point:3.0, pct:82,  prof:"정교수", note:"정상",
-    eval:"중간 30% / 기말 30% / 발표 20% / 과제 20%", desc:"요구사항/설계/테스트/형상관리/프로젝트 관리" },
-];
+// ===== API 호출 함수들 =====
+async function fetchGradeSummary(studentId, semester) {
+  try {
+    const response = await fetch(`/api/grades/summary?studentId=${studentId}&semester=${semester}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // 실제 환경에서는 JWT 토큰 추가
+        // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
 
-let rows = [...allRows];
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('성적 공개 기간이 아닙니다.');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Grade summary fetch failed:', error);
+    throw error;
+  }
+}
+
+async function fetchGradeList(studentId, semester) {
+  try {
+    const response = await fetch(`/api/grades/list?studentId=${studentId}&semester=${semester}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // 실제 환경에서는 JWT 토큰 추가
+        // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('성적 공개 기간이 아닙니다.');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Grade list fetch failed:', error);
+    throw error;
+  }
+}
+
+let rows = [];
 let sortState = { key: null, dir: 1 };
 let currentRow = null;
 
@@ -91,40 +124,118 @@ function renderTable() {
   renderSummary();
 }
 
-function renderSummary() {
-  const applied = rows.reduce((acc, r) => acc + (r.credit || 0), 0);
-  const earned = applied;
-
-  const gpaBase = rows.filter((r) => r.point != null);
-  const totalCreditsForGPA = gpaBase.reduce((acc, r) => acc + (r.credit || 0), 0);
-  const totalPoints = gpaBase.reduce((acc, r) => acc + (r.credit || 0) * (r.point || 0), 0);
-  const gpa = totalCreditsForGPA === 0 ? 0 : totalPoints / totalCreditsForGPA;
-
-  const pctBase = rows.filter((r) => r.pct != null);
-  const pctAvg = pctBase.length === 0 ? 0 : pctBase.reduce((acc, r) => acc + r.pct, 0) / pctBase.length;
-
-  $("sumApplied").textContent = String(applied);
-  $("sumEarned").textContent = String(earned);
-  $("sumGPA").textContent = gpa.toFixed(2);
-  $("sumPct").textContent = pctAvg.toFixed(1);
-
+async function renderSummary() {
   const y = $("year").value;
   const t = $("term").value;
-  $("termLabel").textContent = `${y}년 ${getTermText(t)}`;
+  const semester = `${y}-${t}`;
+  const studentId = localStorage.getItem("userId") || "12345";
+
+  try {
+    // API에서 요약 정보 가져오기
+    const summaryData = await fetchGradeSummary(studentId, semester);
+
+    $("sumApplied").textContent = String(summaryData.totalCredits);
+    $("sumEarned").textContent = String(summaryData.totalCredits);
+    $("sumGPA").textContent = summaryData.gpa.toFixed(2);
+
+    // 백분율은 GPA에서 계산 (4.5 만점 기준)
+    const pctFromGPA = (summaryData.gpa / 4.5) * 100;
+    $("sumPct").textContent = pctFromGPA.toFixed(1);
+
+    $("termLabel").textContent = `${y}년 ${getTermText(t)}`;
+  } catch (error) {
+    console.error('Failed to load grade summary:', error);
+    showError(error.message);
+
+    // 에러 시 기본값 표시
+    $("sumApplied").textContent = "0";
+    $("sumEarned").textContent = "0";
+    $("sumGPA").textContent = "0.00";
+    $("sumPct").textContent = "0.0";
+    $("termLabel").textContent = `${y}년 ${getTermText(t)}`;
+  }
 }
 
-function applyFilters() {
+async function applyFilters() {
+  const y = $("year").value;
+  const t = $("term").value;
+  const semester = `${y}-${t}`;
   const q = $("q").value.trim().toLowerCase();
-  rows = allRows.filter((r) => (q ? r.name.toLowerCase().includes(q) : true));
-  if (sortState.key) sortBy(sortState.key, true);
-  else renderTable();
+  const studentId = localStorage.getItem("userId") || "12345";
+
+  try {
+    showLoading(true);
+
+    // API에서 성적 목록 가져오기
+    const apiData = await fetchGradeList(studentId, semester);
+
+    // API 데이터를 클라이언트 형식으로 변환
+    rows = apiData.map(item => ({
+      code: item.courseCode,
+      name: item.courseName,
+      type: determineSubjectType(item.courseCode), // 과목코드로 이수구분 판단
+      credit: item.credit,
+      grade: item.gradeLetter,
+      point: calculateGradePoint(item.gradeLetter), // 등급으로 평점 계산
+      pct: item.score,
+      prof: "교수", // API에서 제공되지 않으면 기본값
+      note: item.isFinalized ? "정상" : "미확정",
+      eval: "중간 30% / 기말 40% / 과제 20% / 출석 10%", // 기본값
+      desc: `${item.courseName} 과목` // 기본값
+    }));
+
+    // 검색 필터 적용
+    if (q) {
+      rows = rows.filter((r) => r.name.toLowerCase().includes(q));
+    }
+
+    if (sortState.key) sortBy(sortState.key, true);
+    else renderTable();
+
+  } catch (error) {
+    console.error('Failed to load grade list:', error);
+    showError(error.message);
+    rows = [];
+    renderTable();
+  } finally {
+    showLoading(false);
+  }
+}
+
+function determineSubjectType(courseCode) {
+  if (courseCode.startsWith("GENE")) return "교필";
+  if (courseCode.startsWith("COME")) return "전필";
+  if (courseCode.startsWith("MATH")) return "교선";
+  return "전선";
+}
+
+function calculateGradePoint(gradeLetter) {
+  const gradeMap = {
+    "A+": 4.5, "A0": 4.0, "A-": 3.7,
+    "B+": 3.3, "B0": 3.0, "B-": 2.7,
+    "C+": 2.3, "C0": 2.0, "C-": 1.7,
+    "D+": 1.3, "D0": 1.0, "D-": 0.7,
+    "F": 0.0, "P": null, "NP": null
+  };
+  return gradeMap[gradeLetter] || null;
+}
+
+function showLoading(show) {
+  const loadingEl = $("loading");
+  if (loadingEl) {
+    loadingEl.style.display = show ? "block" : "none";
+  }
+}
+
+function showError(message) {
+  alert(`오류: ${message}`);
 }
 
 function resetFilters() {
-  $("year").value = "2025";
+  $("year").value = "2024";
   $("term").value = "1";
   $("q").value = "";
-  rows = [...allRows];
+  rows = [];
   sortState = { key: null, dir: 1 };
   renderTable();
 }
@@ -149,7 +260,12 @@ function sortBy(key, keepDir = false) {
 }
 
 function exportCSV() {
-  const headers = ["과목코드","과목명","이수구분","학점","등급","평점","백분율","담당교수","비고"];
+  if (rows.length === 0) {
+    alert("내보낼 데이터가 없습니다.");
+    return;
+  }
+
+  const headers = ["과목코드", "과목명", "이수구분", "학점", "등급", "평점", "백분율", "담당교수", "비고"];
   const lines = [headers.join(",")];
 
   rows.forEach((r) => {
@@ -297,7 +413,9 @@ function bindEvents() {
 function init() {
   formatToday();
   bindEvents();
-  renderTable();
+
+  // 초기 데이터 로드
+  applyFilters();
 
   // 시작 상태 확정
   closeAppealModal();
